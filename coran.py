@@ -34,7 +34,7 @@ except Exception as e:
     st.stop()
 
 # --- 3. SÉCURITÉ ---
-CODE_SECRET = "Yassine05"
+CODE_SECRET = "Y"
 if "auth" not in st.session_state:
     st.session_state["auth"] = False
 
@@ -109,3 +109,4 @@ if not df.empty:
                 df.loc[p_nom, "Page Actuelle"] = p_val
                 df.loc[p_nom, "Rythme"] = r_val
                 conn.update(spreadsheet=st.secrets["connections"]["gsheets"]["spreadsheet"], data
+
