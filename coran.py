@@ -3,6 +3,21 @@ import pandas as pd
 from datetime import date, timedelta
 import os
 
+# --- 1. CONFIGURATION DE LA PAGE (Doit être en premier) ---
+st.set_page_config(page_title="Bilan Coran", layout="wide", initial_sidebar_state="collapsed")
+
+# --- 2. CACHER L'INTERFACE STREAMLIT (LOGO, MENU, GITHUB) ---
+hide_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stAppDeployButton {display:none;}
+    [data-testid="stToolbar"] {visibility: hidden !important;}
+    </style>
+"""
+st.markdown(hide_style, unsafe_allow_html=True)
+
 # --- CONFIGURATION SÉCURITÉ ---
 CODE_SECRET = "Yassine05"
 
@@ -10,7 +25,6 @@ CODE_SECRET = "Yassine05"
 dossier_actuel = os.path.dirname(__file__)
 DATA_FILE = os.path.join(dossier_actuel, "sauvegarde_lecture.csv")
 
-# Données issues de ton image (Nom: [Page_Départ, Rythme/Obj_Lect, Cycles])
 donnees_initiales = {
     "ABLA": [1, 15, 0],
     "ELEL": [1, 15, 0],
@@ -30,33 +44,33 @@ else:
     df.index.name = "Nom"
     df.to_csv(DATA_FILE)
 
-st.set_page_config(page_title="Bilan", layout="wide")
-
-# --- SYSTÈME DE VERRU ---
+# --- SYSTÈME D'AUTHENTIFICATION ---
 if "auth" not in st.session_state:
     st.session_state["auth"] = False
 
 if not st.session_state["auth"]:
-    st.title("🔐 Accès Sécurisé")
-    saisie = st.text_input("Veuillez entrer le code d'accès :", type="password")
-    if st.button("Déverrouiller"):
-        if saisie == CODE_SECRET:
-            st.session_state["auth"] = True
-            st.rerun()
-        else:
-            st.error("Code incorrect.")
+    st.markdown("<h2 style='text-align: center;'>🔐 Accès Sécurisé</h2>", unsafe_allow_html=True)
+    cols = st.columns([1, 2, 1])
+    with cols[1]:
+        saisie = st.text_input("Code d'accès :", type="password")
+        if st.button("Déverrouiller", use_container_width=True):
+            if saisie == CODE_SECRET:
+                st.session_state["auth"] = True
+                st.rerun()
+            else:
+                st.error("Code incorrect.")
     st.stop()
 
 # --- INTERFACE PRINCIPALE ---
-st.title("📖 Bilan")
+st.markdown("<h1 style='text-align: center; color: #15803d;'>📖 Mon Bilan Coran</h1>", unsafe_allow_html=True)
 
-# --- BARRE LATÉRALE (AJOUT / SUPPRESSION / DÉCONNEXION) ---
+# --- BARRE LATÉRALE ---
 with st.sidebar:
-    st.header("Paramètres")
+    st.header("⚙️ Paramètres")
     nom_saisie = st.text_input("Ajouter un prénom :")
     if st.button("➕ Ajouter"):
         if nom_saisie and nom_saisie not in df.index:
-            df.loc[nom_saisie] = [1, 2, 0]
+            df.loc[nom_saisie] = [1, 10, 0]
             df.to_csv(DATA_FILE)
             st.rerun()
     
@@ -75,12 +89,11 @@ with st.sidebar:
 
 # --- CONTENU ---
 if not df.empty:
-    st.subheader("récapitulatif")
+    st.subheader("📊 Récapitulatif")
     recap_df = df.copy()
     recap_df["Progression"] = (recap_df["Page Actuelle"] / 604 * 100).round(1).astype(str) + "%"
     st.table(recap_df[["Rythme", "Cycles Finis", "Page Actuelle", "Progression"]])
 
-    # --- MENUS DÉPLOYABLES (MESSAGE / MAJ / PRÉCISION) ---
     col_a, col_b, col_c = st.columns(3)
 
     with col_a:
@@ -96,7 +109,7 @@ if not df.empty:
             st.text_area("Copier :", value=msg, height=150)
 
     with col_b:
-        with st.expander("📝 Mise à jour (Aujourd'hui)"):
+        with st.expander("📝 Mise à jour"):
             user = st.selectbox("Personne :", df.index, key="up")
             p_act = st.number_input("Page actuelle :", 1, 604, int(df.loc[user, "Page Actuelle"]))
             r_act = st.number_input("Rythme :", 1, 100, int(df.loc[user, "Rythme"]))
@@ -106,7 +119,7 @@ if not df.empty:
                 st.rerun()
 
     with col_c:
-        with st.expander("🔄 date précise"):
+        with st.expander("🔄 Date précise"):
             user_adj = st.selectbox("Personne :", df.index, key="adj")
             d_adj = st.date_input("Date précise :", date.today())
             p_adj = st.number_input("Page à cette date :", 1, 604)
