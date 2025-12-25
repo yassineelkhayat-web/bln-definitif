@@ -14,7 +14,6 @@ st.markdown("""
     .stAppDeployButton {display: none !important;}
     [data-testid="stToolbar"] {display: none !important;}
     .block-container {padding-top: 2rem !important;}
-    stTable {width: 100%;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -34,7 +33,7 @@ except Exception as e:
     st.stop()
 
 # --- 3. SÉCURITÉ ---
-CODE_SECRET = "Y"
+CODE_SECRET = "Yassine05"
 if "auth" not in st.session_state:
     st.session_state["auth"] = False
 
@@ -54,7 +53,7 @@ if not st.session_state["auth"]:
 # --- 4. TITRE ---
 st.markdown("<h1 style='text-align: center; color: #15803d;'>📖 Suivi de Lecture Coran</h1>", unsafe_allow_html=True)
 
-# --- 5. BARRE LATÉRALE (GESTION DES PROFILS) ---
+# --- 5. BARRE LATÉRALE ---
 with st.sidebar:
     st.header("👤 Profils")
     nouveau_nom = st.text_input("Nouveau prénom :")
@@ -79,34 +78,35 @@ with st.sidebar:
         st.session_state["auth"] = False
         st.rerun()
 
-# --- 6. AFFICHAGE ET FONCTIONNALITÉS ---
+# --- 6. FONCTIONNALITÉS ---
 if not df.empty:
-    # --- TABLEAU DE BORD ---
     st.subheader("📊 État de la progression")
     recap = df.copy()
     recap["Page Actuelle"] = pd.to_numeric(recap["Page Actuelle"])
     recap["Progression"] = (recap["Page Actuelle"] / 604 * 100).round(1).astype(str) + "%"
-    
-    # Affichage propre
     st.table(recap[["Page Actuelle", "Rythme", "Cycles Finis", "Progression"]])
 
     st.divider()
-
-    # --- ACTIONS ---
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        with st.expander("📝 Mise à jour Quotidienne"):
+        with st.expander("📝 Mise à jour"):
             p_nom = st.selectbox("Qui ?", df.index, key="daily")
             p_val = st.number_input("Nouvelle Page :", 1, 604, int(df.loc[p_nom, "Page Actuelle"]))
             r_val = st.number_input("Nouveau Rythme :", 1, 100, int(df.loc[p_nom, "Rythme"]))
             
             if st.button("💾 Enregistrer"):
-                # Si la nouvelle page est inférieure à l'ancienne, on considère qu'un cycle est fini
                 if p_val < int(df.loc[p_nom, "Page Actuelle"]):
                     df.loc[p_nom, "Cycles Finis"] = int(df.loc[p_nom, "Cycles Finis"]) + 1
-                
                 df.loc[p_nom, "Page Actuelle"] = p_val
                 df.loc[p_nom, "Rythme"] = r_val
-                conn.update(spreadsheet=st.secrets["connections"]["gsheets"]["spreadsheet"], data
+                conn.update(spreadsheet=st.secrets["connections"]["gsheets"]["spreadsheet"], data=df.reset_index())
+                st.success("Synchronisé !")
+                st.rerun()
 
+    with col2:
+        with st.expander("💬 Message"):
+            nb_jours = st.slider("Jours :", 1, 7, 3)
+            cible_date = date.today() + timedelta(days=nb_jours)
+            nom_j = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"][cible_date.weekday()]
+            resultat_msg = f"📌 *Objectif {nom_j}*
